@@ -141,12 +141,17 @@ static struct wpa_ctrl * hostapd_cli_open_connection(const char *ifname)
 
 	if (ifname == NULL)
 		return NULL;
-
+	#ifdef MY_DEBUG
+	printf("##debug##ctrl_iface_dir: %s\n", ctrl_iface_dir);
+	#endif
 	flen = strlen(ctrl_iface_dir) + strlen(ifname) + 2;
 	cfile = malloc(flen);
 	if (cfile == NULL)
 		return NULL;
 	snprintf(cfile, flen, "%s/%s", ctrl_iface_dir, ifname);
+	#ifdef MY_DEBUG
+	printf("##debug##cfile: %s\n", cfile);
+	#endif
 
 	if (client_socket_dir && client_socket_dir[0] &&
 	    access(client_socket_dir, F_OK) < 0) {
@@ -155,7 +160,13 @@ static struct wpa_ctrl * hostapd_cli_open_connection(const char *ifname)
 		return NULL;
 	}
 
+	#ifdef MY_DEBUG
+	printf("##debug##client_socket_dir: %s\n", client_socket_dir);
+	#endif
 	ctrl_conn = wpa_ctrl_open2(cfile, client_socket_dir);
+	#ifdef MY_DEBUG
+	printf("##debug##client_socket_dir: %s\n", client_socket_dir);
+	#endif
 	free(cfile);
 	return ctrl_conn;
 }
@@ -187,6 +198,10 @@ static int _wpa_ctrl_command(struct wpa_ctrl *ctrl, char *cmd, int print)
 	size_t len;
 	int ret;
 
+	#ifdef MY_DEBUG
+	if(ctrl_conn == ctrl) printf("##debug##ctrl_conn == ctrl\n");
+	else  printf("##debug##ctrl_conn != ctrl\n");
+	#endif
 	if (ctrl_conn == NULL) {
 		printf("Not connected to hostapd - command dropped.\n");
 		return -1;
@@ -326,6 +341,9 @@ static int hostapd_cli_cmd_deauthenticate(struct wpa_ctrl *ctrl, int argc,
 			    argv[0], argv[1]);
 	else
 		os_snprintf(buf, sizeof(buf), "DEAUTHENTICATE %s", argv[0]);
+	#ifdef MY_DEBUG
+	printf("##debug##deauthenticate'buf: %s\n", buf);
+	#endif
 	return wpa_ctrl_command(ctrl, buf);
 }
 
@@ -1067,6 +1085,20 @@ static int hostapd_cli_cmd_log_level(struct wpa_ctrl *ctrl, int argc,
 	return wpa_ctrl_command(ctrl, cmd);
 }
 
+//command defined by user
+static int hostapd_cli_cmd_ssid(struct wpa_ctrl *ctrl, int argc,
+					char *argv[])
+{
+	char buf[64];
+	if (argc < 1 || argc > 1) {
+		printf("Invalid 'ssid' command - exactly one "
+		       "argument, new ssid, is required.\n");
+		return -1;
+	}
+	os_snprintf(buf, sizeof(buf), "SSID %s", argv[0]);
+	return wpa_ctrl_command(ctrl, buf);
+}
+
 
 struct hostapd_cli_cmd {
 	const char *cmd;
@@ -1126,6 +1158,8 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	{ "disable", hostapd_cli_cmd_disable },
 	{ "erp_flush", hostapd_cli_cmd_erp_flush },
 	{ "log_level", hostapd_cli_cmd_log_level },
+	//command defined by user
+	{"ssid",  hostapd_cli_cmd_ssid},
 	{ NULL, NULL }
 };
 
@@ -1164,6 +1198,9 @@ static void wpa_request(struct wpa_ctrl *ctrl, int argc, char *argv[])
 	} else if (count == 0) {
 		printf("Unknown command '%s'\n", argv[0]);
 	} else {
+		#ifdef MY_DEBUG
+		printf("##debug##match->cmd: %s\n", match->cmd);
+		#endif
 		match->handler(ctrl, argc - 1, &argv[1]);
 	}
 }
@@ -1413,6 +1450,9 @@ int main(int argc, char *argv[])
 				closedir(dir);
 			}
 		}
+		#ifdef MY_DEBUG
+		printf("##debug##ctrl_ifname: %s\n", ctrl_ifname);
+		#endif
 		ctrl_conn = hostapd_cli_open_connection(ctrl_ifname);
 		if (ctrl_conn) {
 			if (warning_displayed)
@@ -1434,6 +1474,10 @@ int main(int argc, char *argv[])
 		continue;
 	}
 
+	#ifdef MY_DEBUG
+	printf("##debug##interactive: %d\n", interactive);
+	printf("##debug##action_file: %s\n", action_file);
+	#endif
 	if (interactive || action_file) {
 		if (wpa_ctrl_attach(ctrl_conn) == 0) {
 			hostapd_cli_attached = 1;

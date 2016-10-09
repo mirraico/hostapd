@@ -554,3 +554,27 @@ int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd)
 {
 	return hostapd_drv_stop_ap(hapd);
 }
+
+int hostapd_ctrl_iface_ssid(struct hostapd_iface *iface,
+				      const char *txtnewssid)
+{
+	if (hostapd_disable_iface(iface) < 0) {
+		wpa_printf(MSG_ERROR, "Disabling of interface failed");
+		return -1;
+	}
+
+	//modify ssid
+	struct hostapd_bss_config *bss = iface->conf->bss[0];
+	bss->ssid.ssid_len = os_strlen(txtnewssid);
+	os_memcpy(bss->ssid.ssid, txtnewssid, bss->ssid.ssid_len);
+	bss->ssid.ssid_set = 1;
+
+	if (hostapd_enable_iface(iface) < 0) {
+		wpa_printf(MSG_ERROR, "Enabling of interface failed");
+		return -1;
+	}
+	#ifdef MY_DEBUG
+	printf("##debug##change ssid to %s\n", txtnewssid);
+	#endif
+	return 0;
+}

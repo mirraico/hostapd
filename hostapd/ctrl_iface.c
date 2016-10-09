@@ -2276,6 +2276,10 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 		reply_len = hostapd_ctrl_iface_track_sta_list(
 			hapd, reply, reply_size);
 #endif /* NEED_AP_MLME */
+	//command defined by user
+	}else if(os_strncmp(buf, "SSID ", 5) == 0) {
+		if (hostapd_ctrl_iface_ssid(hapd->iface, buf + 5))
+			reply_len = -1;
 	} else {
 		os_memcpy(reply, "UNKNOWN COMMAND\n", 16);
 		reply_len = 16;
