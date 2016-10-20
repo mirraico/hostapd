@@ -23,6 +23,8 @@
 #include "ctrl_iface_ap.h"
 #include "ap_drv_ops.h"
 
+#include "ap_config.h"
+
 
 static int hostapd_get_sta_tx_rx(struct hostapd_data *hapd,
 				 struct sta_info *sta,
@@ -555,26 +557,17 @@ int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd)
 	return hostapd_drv_stop_ap(hapd);
 }
 
-int hostapd_ctrl_iface_ssid(struct hostapd_iface *iface,
+int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				      const char *txtnewssid)
 {
-	if (hostapd_disable_iface(iface) < 0) {
-		wpa_printf(MSG_ERROR, "Disabling of interface failed");
-		return -1;
-	}
-
-	//modify ssid
-	struct hostapd_bss_config *bss = iface->conf->bss[0];
-	bss->ssid.ssid_len = os_strlen(txtnewssid);
+    struct hostapd_bss_config *bss = hapd->iface->conf->bss[0];
+    bss->ssid.ssid_len = os_strlen(txtnewssid);
 	os_memcpy(bss->ssid.ssid, txtnewssid, bss->ssid.ssid_len);
 	bss->ssid.ssid_set = 1;
-
-	if (hostapd_enable_iface(iface) < 0) {
-		wpa_printf(MSG_ERROR, "Enabling of interface failed");
-		return -1;
-	}
-	#ifdef MY_DEBUG
-	printf("##debug##change ssid to %s\n", txtnewssid);
-	#endif
+    hostapd_set_ssid(hapd, bss->ssid.ssid, bss->ssid.ssid_len);
+    wpa_printf(MSG_INFO, "previous psk: %s", bss->ssid.wpa_psk->psk);
+    bss->ssid.wpa_psk = NULL;
+    hostapd_setup_wpa_psk(bss);
+    wpa_printf(MSG_INFO, "current psk: %s", bss->ssid.wpa_psk->psk);
 	return 0;
 }
