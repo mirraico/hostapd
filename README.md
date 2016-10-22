@@ -47,7 +47,19 @@ DHCP_OPTION2="6,8.8.8.8"
 ```
 以上参数可自定义, 启动脚本后将会检查系统环境, 安装确实组件, 同时在指定接口上启动dhcp和nat功能.
 
+---
+### 10月22号
+#### 代码改进
+之前代码存在修改ssid后, 旧的信标没有被移除, 使用wifi-analyzer可以看到旧的ssid同样存在.
+**停止信标发送,删除旧信标**: ctrl_iface_ap.c(L569-L573)
+**重建信标帧并发送**: ctrl_iface_ap.c(L575-579)
+**新的channel代码**: ctrl_iface_ap.c(L588-L615)
+思路和ssid一样, 就是通过重建信标帧实现.
+
+#### 启动脚本
+![image_1avlkheou6ab18no1nc41efr1i6a9.png-3.4kB][1]
+加上-dd参数打印所有调试信息方便测试, 不需要可以将-dd去掉.
+默认启动将不打印调试信息.
 
 
-
-
+  [1]: http://static.zybuluo.com/sammyyx/4yfv5rnglzjqzpm48g2lf68e/image_1avlkheou6ab18no1nc41efr1i6a9.png
