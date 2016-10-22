@@ -1058,7 +1058,6 @@ static int hostap_set_freq(void *priv, struct hostapd_freq_params *freq)
 	os_strlcpy(iwr.ifr_name, drv->iface, IFNAMSIZ);
 	iwr.u.freq.m = freq->channel;
 	iwr.u.freq.e = 0;
-
 	if (ioctl(drv->ioctl_sock, SIOCSIWFREQ, &iwr) < 0) {
 		wpa_printf(MSG_ERROR, "ioctl[SIOCSIWFREQ]: %s",
 			   strerror(errno));

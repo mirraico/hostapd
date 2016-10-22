@@ -1099,6 +1099,18 @@ static int hostapd_cli_cmd_ssid(struct wpa_ctrl *ctrl, int argc,
 	return wpa_ctrl_command(ctrl, buf);
 }
 
+static int hostapd_cli_cmd_freq_channel(struct wpa_ctrl *ctrl, int argc, char *argv[])
+{
+    char buf[64];
+    printf("args:%s\n", argv[0]);
+	if (argc < 1 || argc > 1) {
+		printf("Invalid 'channel' command - exactly one "
+		       "argument, new channel, is required.\n");
+		return -1;
+	}
+	os_snprintf(buf, sizeof(buf), "CHANNEL %s", argv[0]);
+	return wpa_ctrl_command(ctrl, buf);
+}
 
 struct hostapd_cli_cmd {
 	const char *cmd;
@@ -1159,7 +1171,8 @@ static const struct hostapd_cli_cmd hostapd_cli_commands[] = {
 	{ "erp_flush", hostapd_cli_cmd_erp_flush },
 	{ "log_level", hostapd_cli_cmd_log_level },
 	//command defined by user
-	{"ssid",  hostapd_cli_cmd_ssid},
+	{ "ssid",  hostapd_cli_cmd_ssid },
+	{ "channel", hostapd_cli_cmd_freq_channel },
 	{ NULL, NULL }
 };
 
@@ -1171,6 +1184,8 @@ static void wpa_request(struct wpa_ctrl *ctrl, int argc, char *argv[])
 
 	count = 0;
 	cmd = hostapd_cli_commands;
+    printf("args1: %s\n", argv[0]);
+	printf("args1: %s\n", argv[1]);
 	while (cmd->cmd) {
 		if (strncasecmp(cmd->cmd, argv[0], strlen(argv[0])) == 0) {
 			match = cmd;
@@ -1183,7 +1198,7 @@ static void wpa_request(struct wpa_ctrl *ctrl, int argc, char *argv[])
 		}
 		cmd++;
 	}
-
+    printf("Count: %d\n", count);
 	if (count > 1) {
 		printf("Ambiguous command '%s'; possible commands:", argv[0]);
 		cmd = hostapd_cli_commands;
@@ -1201,6 +1216,7 @@ static void wpa_request(struct wpa_ctrl *ctrl, int argc, char *argv[])
 		#ifdef MY_DEBUG
 		printf("##debug##match->cmd: %s\n", match->cmd);
 		#endif
+		printf("call handler\n");
 		match->handler(ctrl, argc - 1, &argv[1]);
 	}
 }

@@ -22,8 +22,10 @@
 #include "p2p_hostapd.h"
 #include "ctrl_iface_ap.h"
 #include "ap_drv_ops.h"
-
+#include "../common/hw_features_common.h"
 #include "ap_config.h"
+#include "hw_features.h"
+#include "beacon.h"
 
 
 static int hostapd_get_sta_tx_rx(struct hostapd_data *hapd,
@@ -564,10 +566,50 @@ int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
     bss->ssid.ssid_len = os_strlen(txtnewssid);
 	os_memcpy(bss->ssid.ssid, txtnewssid, bss->ssid.ssid_len);
 	bss->ssid.ssid_set = 1;
-    hostapd_set_ssid(hapd, bss->ssid.ssid, bss->ssid.ssid_len);
+	if(hapd->driver->stop_ap(hapd->drv_priv) != 0)
+    {
+        wpa_printf(MSG_ERROR, "Could not stop ap for "
+				   "kernel driver");
+        return -1;
+    }
+    if(ieee802_11_set_beacon(hapd) != 0)
+    {
+        wpa_printf(MSG_ERROR, "Could not set ssid for "
+				   "kernel driver");
+        return -1;
+    }
     wpa_printf(MSG_INFO, "previous psk: %s", bss->ssid.wpa_psk->psk);
     bss->ssid.wpa_psk = NULL;
     hostapd_setup_wpa_psk(bss);
     wpa_printf(MSG_INFO, "current psk: %s", bss->ssid.wpa_psk->psk);
 	return 0;
+}
+
+int hostapd_ctrl_iface_freq_channel(struct hostapd_data *hapd, const char *channel)
+{
+    int ichannel = atoi(channel);
+    struct hostapd_iface *iface = hapd->iface;
+    wpa_printf(MSG_INFO, "int channel:%d", ichannel);
+    wpa_printf(MSG_INFO, "Mode: %s  Channel: %d  "
+               "Frequency: %d MHz",
+			   hostapd_hw_mode_txt(iface->conf->hw_mode),
+			   iface->conf->channel, iface->freq);
+    hapd->iconf->channel = ichannel;
+    if(hapd->driver->stop_ap(hapd->drv_priv) != 0)
+    {
+        wpa_printf(MSG_ERROR, "Could not stop ap for "
+				   "kernel driver");
+        return -1;
+    }
+    if(ieee802_11_set_beacon(hapd) != 0)
+    {
+        wpa_printf(MSG_ERROR, "Could not set channel for "
+				   "kernel driver");
+        return -1;
+    }
+    wpa_printf(MSG_INFO, "Mode: %s  Channel: %d  "
+               "Frequency: %d MHz",
+			   hostapd_hw_mode_txt(iface->conf->hw_mode),
+			   iface->conf->channel, iface->freq);
+    return 0;
 }

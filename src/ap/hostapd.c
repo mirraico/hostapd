@@ -924,7 +924,11 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 			}
 		}
 
-		hapd->interface_added = 1;
+		hapd->interface_added = 1;//已添加
+		/*
+		 * 驱动API调用: driver_nl80211.c(L5879)
+		 * 功能: 添加一个虚拟接口
+		 */
 		if (hostapd_if_add(hapd->iface->bss[0], WPA_IF_AP_BSS,
 				   conf->iface, hapd->own_addr, hapd,
 				   &hapd->drv_priv, force_ifname, if_addr,
@@ -932,7 +936,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 				   first == -1)) {
 			wpa_printf(MSG_ERROR, "Failed to add BSS (BSSID="
 				   MACSTR ")", MAC2STR(hapd->own_addr));
-			hapd->interface_added = 0;
+			hapd->interface_added = 0;//未添加
 			return -1;
 		}
 	}
@@ -948,9 +952,17 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 	if (flush_old_stations)
 		hostapd_flush_old_stations(hapd,
 					   WLAN_REASON_PREV_AUTH_NOT_VALID);
+	/*
+	 * 驱动API调用: driver_hostap.c(533)
+	 * 功能: Beacon privacy相关
+	 */
 	hostapd_set_privacy(hapd, 0);
 
 	hostapd_broadcast_wep_clear(hapd);
+
+    /*
+     * 功能: 设置WEP加密
+     */
 	if (hostapd_setup_encryption(conf->iface, hapd))
 		return -1;
 
@@ -959,6 +971,11 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 	 * if one was specified in the config file, verify they
 	 * match.
 	 */
+
+    /*
+     * 驱动API调用: driver_nl80211.c(771)
+     * 功能: 从系统得到SSID
+     */
 	ssid_len = hostapd_get_ssid(hapd, ssid, sizeof(ssid));
 	if (ssid_len < 0) {
 		wpa_printf(MSG_ERROR, "Could not read SSID from system");
@@ -989,6 +1006,9 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 			   wpa_ssid_txt(conf->ssid.ssid, conf->ssid.ssid_len));
 	}
 
+	/*
+	 * 功能: 设置wpa_psk(预配置/从SSID计算/psk文件)
+	 */
 	if (hostapd_setup_wpa_psk(conf)) {
 		wpa_printf(MSG_ERROR, "WPA-PSK setup failed.");
 		return -1;
@@ -996,6 +1016,11 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 
 	/* Set SSID for the kernel driver (to be used in beacon and probe
 	 * response frames) */
+
+    /*
+     * 驱动API调用: driver_hostap.c(542)
+     * 功能: 为内核驱动设置SSID
+     */
 	if (set_ssid && hostapd_set_ssid(hapd, conf->ssid.ssid,
 					 conf->ssid.ssid_len)) {
 		wpa_printf(MSG_ERROR, "Could not set SSID for kernel driver");
@@ -1037,6 +1062,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		wpa_printf(MSG_ERROR, "ACL initialization failed.");
 		return -1;
 	}
+
 	if (hostapd_init_wps(hapd, conf))
 		return -1;
 
@@ -1048,6 +1074,9 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		return -1;
 	}
 
+	/*
+	 * 功能: WPA认证器初始化
+	 */
 	if ((conf->wpa || conf->osen) && hostapd_setup_wpa(hapd))
 		return -1;
 
@@ -1106,6 +1135,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		wpa_printf(MSG_ERROR, "VLAN initialization failed.");
 		return -1;
 	}
+
 
 	if (!conf->start_disabled && ieee802_11_set_beacon(hapd) < 0)
 		return -1;

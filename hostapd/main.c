@@ -179,6 +179,7 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 				return -1;
 			}
 		}
+		wpa_printf(MSG_DEBUG, "relevant driver:%s", wpa_drivers[i]->name);
 
 		params.global_priv = global.drv_priv[i];
 		break;

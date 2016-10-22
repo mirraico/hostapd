@@ -26,5 +26,6 @@ int hostapd_parse_csa_settings(const char *pos,
 int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd);
 int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				      const char *txtnewssid);
+int hostapd_ctrl_iface_freq_channel(struct hostapd_data *hapd, const char *channel);
 
 #endif /* CTRL_IFACE_AP_H */
