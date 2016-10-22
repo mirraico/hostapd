@@ -4,7 +4,7 @@
 SYS_LOG_MODULES=-1
 SYS_LOG_LEVEL=4
 STDOUT_LOG_MODULES=-1
-STDOUT_LOG_LEVEL=2
+STDOUT_LOG_LEVEL=4
 
 #DHCP server Configuration(user configuration)
 WLAN_IFACE_NAME="wlx14cf92afb710"
@@ -139,4 +139,4 @@ fi
 echo "creating symbol link to $EXEC_DIR"
 sudo ln -s $CUR_DIR/hostapd $EXEC_DIR/hostapd
 echo "start hostapd..."
-sudo $EXEC_DIR/hostapd $CUR_DIR/config/hostapd.conf
+sudo $EXEC_DIR/hostapd -dd $CUR_DIR/config/hostapd.conf
