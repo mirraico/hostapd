@@ -28,6 +28,7 @@ struct mesh_conf;
 #endif /* CONFIG_MESH */
 
 struct hostapd_iface;
+struct hostapd_simple_config;
 
 struct hapd_interfaces {
 	int (*reload_config)(struct hostapd_iface *iface);
@@ -38,6 +39,7 @@ struct hapd_interfaces {
 				  int (*cb)(struct hostapd_iface *iface,
 					    void *ctx), void *ctx);
 	int (*driver_init)(struct hostapd_iface *iface);
+	struct hostapd_config * (*config_load_cb)(struct hostapd_simple_config *s_conf);
 
 	size_t count;
 	int global_ctrl_sock;
@@ -99,6 +101,22 @@ struct wps_stat {
 	u8 peer_addr[ETH_ALEN];
 };
 
+/**
+ * struct hostapd_simple_config - simple string configuration
+ */
+struct hostapd_simple_config {
+    char *ssid;
+    char *wlan_interface;
+    char *wpa_passphrase;
+    char *wpa_key_mgmt;
+    char *wpa_pairwise;
+    char *rsn_pairwise;
+    char *ctrl_interface;
+    char *hw_mode;
+    int channel;
+    int wpa;
+    int auth_algs;
+};
 
 /**
  * struct hostapd_data - hostapd per-BSS data structure
@@ -435,6 +453,8 @@ void hostapd_interface_deinit(struct hostapd_iface *iface);
 void hostapd_interface_free(struct hostapd_iface *iface);
 struct hostapd_iface * hostapd_init(struct hapd_interfaces *interfaces,
 				    const char *config_file);
+struct hostapd_iface * hostapd_init_no_config(struct hapd_interfaces *interfaces,
+                                    struct hostapd_simple_config *s_conf);
 struct hostapd_iface *
 hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
 			   const char *config_fname, int debug);

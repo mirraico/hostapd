@@ -56,9 +56,9 @@ function ConfigHostapd
     echo "channel=1">&3
     echo "wpa=2">&3
     echo "wpa_passphrase=mypassword">&3
-    echo "wpa_key_mgmt=WPA-PSK">&3
-    echo "wpa_pairwise=TKIP">&3
-    echo "rsn_pairwise=CCMP">&3
+    #echo "wpa_key_mgmt=WPA-PSK">&3
+    #echo "wpa_pairwise=TKIP">&3
+    #echo "rsn_pairwise=CCMP">&3
     echo "auth_algs=1">&3
     echo "ctrl_interface=/var/run/hostapd">&3
     echo "logger_syslog=$SYS_LOG_MODULES">&3
@@ -139,4 +139,4 @@ fi
 echo "creating symbol link to $EXEC_DIR"
 sudo ln -s $CUR_DIR/hostapd $EXEC_DIR/hostapd
 echo "start hostapd..."
-sudo $EXEC_DIR/hostapd -dd $CUR_DIR/config/hostapd.conf
+sudo $EXEC_DIR/hostapd $CUR_DIR/config/hostapd.conf
