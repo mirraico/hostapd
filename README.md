@@ -1,5 +1,38 @@
 ﻿## README
 ---
+#### 10月28号
+##### 启动封装
+将hostapd启动的main入口函数重新封装, 新的入口函数名称为
+
+```start_hostapd_daemon(struct hostapd_simple_config *s_conf);```
+
+hostapd启动方式改为直接启动, ./hostapd无需跟配置文件路径
+
+##### 程序问题
+
+* 目前支持的配置还很少
+```
+struct hostapd_simple_config {
+    char *ssid;
+    char *wlan_interface;
+    char *wpa_passphrase;
+    char *wpa_key_mgmt;
+    char *wpa_pairwise;
+    char *rsn_pairwise;
+    char *ctrl_interface;
+    char *hw_mode;
+    int channel;
+    int wpa;
+    int auth_algs;
+};
+```
+* 程序**Bug**: 加上wpa认证配置后, wifi将无法接入设备, 设备连接错误提示为**密码错误**.
+
+##### 下一步
+**解决bug**, **完善**配置参数.
+
+
+---
 
 #### 10月22号
 ##### 代码改进
@@ -14,6 +47,7 @@
 
 ##### 启动脚本
 ![image_1avlkheou6ab18no1nc41efr1i6a9.png-3.4kB][1]
+
 加上-dd参数打印所有调试信息方便测试, 不需要可以将-dd去掉.默认启动将不打印调试信息.
 
 ---
