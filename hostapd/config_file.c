@@ -20,7 +20,7 @@
 #include "ap/wpa_auth.h"
 #include "ap/ap_config.h"
 #include "config_file.h"
-
+#include "ap/hostapd.h"
 
 #ifndef CONFIG_NO_RADIUS
 #ifdef EAP_SERVER
@@ -3419,6 +3419,88 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	return 0;
 }
 
+/**
+ * hostapd_config_load - load the configuration from AP-agent
+ *
+ */
+struct hostapd_config * hostapd_config_load(struct hostapd_simple_config *s_conf)
+{
+    struct hostapd_config *conf;
+    conf = hostapd_config_defaults();
+	if (conf == NULL) {
+        wpa_printf(MSG_ERROR, "next hostapd_config_defaults");
+		return NULL;
+	}
+    conf->driver = wpa_drivers[0];
+	if (conf->driver == NULL) {
+		wpa_printf(MSG_ERROR, "No driver wrappers registered!");
+		hostapd_config_free(conf);
+		return NULL;
+	}
+    os_strlcpy(conf->bss[0]->iface, s_conf->wlan_interface, os_strlen(s_conf->wlan_interface) + 1);
+    conf->bss[0]->ssid.ssid_len = os_strlen(s_conf->ssid);
+    if (conf->bss[0]->ssid.ssid_len > SSID_MAX_LEN ||
+        conf->bss[0]->ssid.ssid_len < 1) {
+        wpa_printf(MSG_ERROR, "fail to load ssid");
+        return NULL;
+    }
+    os_memcpy(conf->bss[0]->ssid.ssid, s_conf->ssid, conf->bss[0]->ssid.ssid_len  + 1);
+    conf->bss[0]->ssid.ssid_set = 1;
+
+    os_free(conf->bss[0]->ctrl_interface);
+    conf->bss[0]->ctrl_interface = os_strdup(s_conf->ctrl_interface);
+    conf->channel = s_conf->channel;
+
+    if (os_strcmp(s_conf->hw_mode, "a") == 0)
+        conf->hw_mode = HOSTAPD_MODE_IEEE80211A;
+    else if (os_strcmp(s_conf->hw_mode, "b") == 0)
+        conf->hw_mode = HOSTAPD_MODE_IEEE80211B;
+    else if (os_strcmp(s_conf->hw_mode, "g") == 0)
+        conf->hw_mode = HOSTAPD_MODE_IEEE80211G;
+    else if (os_strcmp(s_conf->hw_mode, "ad") == 0)
+        conf->hw_mode = HOSTAPD_MODE_IEEE80211AD;
+    else if (os_strcmp(s_conf->hw_mode, "any") == 0)
+        conf->hw_mode = HOSTAPD_MODE_IEEE80211ANY;
+    else {
+        wpa_printf(MSG_ERROR, "Line %d: unknown hw_mode '%s'",
+				   0, s_conf->hw_mode);
+        return NULL;
+    }
+
+    conf->bss[0]->auth_algs = s_conf->auth_algs;
+    if(conf->bss[0]->auth_algs == 0)
+    {
+        wpa_printf(MSG_ERROR, "fail to load auth_algs");
+        return NULL;
+    }
+
+    /*
+    conf->bss[0]->wpa = s_conf->wpa;
+
+    int len = os_strlen(s_conf->wpa_passphrase);
+    if (len < 8 || len > 63) {
+        wpa_printf(MSG_ERROR, "fail to load wpa_passphrase");
+        return NULL;
+    }
+    os_free(conf->bss[0]->ssid.wpa_passphrase);
+    wpa_printf(MSG_INFO, "wpa_passphrase:%s", s_conf->wpa_passphrase);
+    conf->bss[0]->ssid.wpa_passphrase = os_strdup(s_conf->wpa_passphrase);
+    if (conf->bss[0]->ssid.wpa_passphrase) {
+        hostapd_config_clear_wpa_psk(&conf->bss[0]->ssid.wpa_psk);
+        conf->bss[0]->ssid.wpa_passphrase_set = 1;
+    }
+
+    conf->bss[0]->wpa_key_mgmt = hostapd_config_parse_key_mgmt(0, s_conf->wpa_key_mgmt);
+    if(conf->bss[0]->wpa_key_mgmt == -1)
+    {
+        return NULL;
+    }
+    conf->bss[0]->wpa_pairwise = hostapd_config_parse_cipher(0, s_conf->wpa_pairwise);
+    conf->bss[0]->rsn_pairwise = hostapd_config_parse_cipher(0, s_conf->rsn_pairwise);
+
+    */
+    return conf;
+}
 
 /**
  * hostapd_config_read - Read and parse a configuration file
