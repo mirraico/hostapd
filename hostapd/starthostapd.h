@@ -1,3 +1,6 @@
+
+#ifndef STARTHOSTAPD_H
+#define STARTHOSTAPD_H
 #include "utils/includes.h"
 #ifndef CONFIG_NATIVE_WINDOWS
 #include <syslog.h>
@@ -22,3 +25,4 @@
 #include "ctrl_iface.h"
 
 int start_hostapd_daemon(struct hostapd_simple_config *s_conf);
+#endif // STARTHOSTAPD_H
