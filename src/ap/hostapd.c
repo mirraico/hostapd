@@ -1866,6 +1866,54 @@ void hostapd_interface_free(struct hostapd_iface *iface)
 	hostapd_cleanup_iface(iface);
 }
 
+//user_defined
+struct hostapd_iface * hostapd_init_no_config(struct hapd_interfaces *interfaces,
+                                    struct hostapd_simple_config *s_conf)
+{
+    struct hostapd_iface *hapd_iface = NULL;
+	struct hostapd_config *conf = NULL;
+	struct hostapd_data *hapd;
+	size_t i;
+
+	hapd_iface = os_zalloc(sizeof(*hapd_iface));
+	if (hapd_iface == NULL)
+		goto fail;
+
+    conf = interfaces->config_load_cb(s_conf);
+
+	if (conf == NULL)
+		goto fail;
+	hapd_iface->conf = conf;
+
+	hapd_iface->num_bss = conf->num_bss;
+	hapd_iface->bss = os_calloc(conf->num_bss,
+				    sizeof(struct hostapd_data *));
+	if (hapd_iface->bss == NULL)
+		goto fail;
+
+	for (i = 0; i < conf->num_bss; i++) {
+		hapd = hapd_iface->bss[i] =
+			hostapd_alloc_bss_data(hapd_iface, conf,
+					       conf->bss[i]);
+		if (hapd == NULL)
+			goto fail;
+		hapd->msg_ctx = hapd;
+	}
+
+	return hapd_iface;
+
+fail:
+	if (conf)
+		hostapd_config_free(conf);
+	if (hapd_iface) {
+		os_free(hapd_iface->bss);
+		wpa_printf(MSG_DEBUG, "%s: free iface %p",
+			   __func__, hapd_iface);
+		os_free(hapd_iface);
+	}
+	return NULL;
+};
+
 
 /**
  * hostapd_init - Allocate and initialize per-interface data
@@ -1892,7 +1940,8 @@ struct hostapd_iface * hostapd_init(struct hapd_interfaces *interfaces,
 	if (hapd_iface->config_fname == NULL)
 		goto fail;
 
-	conf = interfaces->config_read_cb(hapd_iface->config_fname);
+    conf = interfaces->config_read_cb(hapd_iface->config_fname);
+
 	if (conf == NULL)
 		goto fail;
 	hapd_iface->conf = conf;
