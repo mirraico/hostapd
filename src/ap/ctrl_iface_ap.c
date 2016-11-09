@@ -26,6 +26,7 @@
 #include "ap_config.h"
 #include "hw_features.h"
 #include "beacon.h"
+#include <stdio.h>
 
 
 static int hostapd_get_sta_tx_rx(struct hostapd_data *hapd,
@@ -559,15 +560,22 @@ int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd)
 	return hostapd_drv_stop_ap(hapd);
 }
 
+void hex_to_string(u8 *hex_bytes, char *string)
+{
+    int i;
+    for(i = 0; i < 32; i++)
+    {
+        sprintf(string+i, "%x", hex_bytes[i]); 
+    }
+}
+
+
 int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				      const char *txtnewssid)
 {
-    printf("in hostapd_ctrl_iface_ssid\n");
     struct hostapd_bss_config *bss = hapd->iface->conf->bss[0];
     bss->ssid.ssid_len = os_strlen(txtnewssid);
-    printf("newssid length:%d", bss->ssid.ssid_len);
 	os_memcpy(bss->ssid.ssid, txtnewssid, bss->ssid.ssid_len);
-	printf("in hostapd_ctrl_iface_ssid 569\n");
 	bss->ssid.ssid_set = 1;
 	if(hapd->driver->stop_ap(hapd->drv_priv) != 0)
     {
@@ -575,18 +583,23 @@ int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				   "kernel driver");
         return -1;
     }
-    printf("in hostapd_ctrl_iface_ssid 578\n");
     if(ieee802_11_set_beacon(hapd) != 0)
     {
         wpa_printf(MSG_ERROR, "Could not set ssid for "
 				   "kernel driver");
         return -1;
     }
-    printf("in hostapd_ctrl_iface_ssid 585\n");
-    wpa_printf(MSG_INFO, "previous psk: %s", bss->ssid.wpa_psk->psk);
+    if(bss->ssid.wpa_psk == NULL)
+    {
+        return 0;
+    }
+    char wpa_psk[64];
+    hex_to_string(bss->ssid.wpa_psk->psk, wpa_psk);
+    wpa_printf(MSG_INFO, "previous psk: %s", wpa_psk);
     bss->ssid.wpa_psk = NULL;
     hostapd_setup_wpa_psk(bss);
-    wpa_printf(MSG_INFO, "current psk: %s", bss->ssid.wpa_psk->psk);
+    hex_to_string(bss->ssid.wpa_psk->psk, wpa_psk);
+    wpa_printf(MSG_INFO, "current psk: %s", wpa_psk);
 	return 0;
 }
 
