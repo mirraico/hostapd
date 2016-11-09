@@ -562,9 +562,12 @@ int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd)
 int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				      const char *txtnewssid)
 {
+    printf("in hostapd_ctrl_iface_ssid\n");
     struct hostapd_bss_config *bss = hapd->iface->conf->bss[0];
     bss->ssid.ssid_len = os_strlen(txtnewssid);
+    printf("newssid length:%d", bss->ssid.ssid_len);
 	os_memcpy(bss->ssid.ssid, txtnewssid, bss->ssid.ssid_len);
+	printf("in hostapd_ctrl_iface_ssid 569\n");
 	bss->ssid.ssid_set = 1;
 	if(hapd->driver->stop_ap(hapd->drv_priv) != 0)
     {
@@ -572,12 +575,14 @@ int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				   "kernel driver");
         return -1;
     }
+    printf("in hostapd_ctrl_iface_ssid 578\n");
     if(ieee802_11_set_beacon(hapd) != 0)
     {
         wpa_printf(MSG_ERROR, "Could not set ssid for "
 				   "kernel driver");
         return -1;
     }
+    printf("in hostapd_ctrl_iface_ssid 585\n");
     wpa_printf(MSG_INFO, "previous psk: %s", bss->ssid.wpa_psk->psk);
     bss->ssid.wpa_psk = NULL;
     hostapd_setup_wpa_psk(bss);
