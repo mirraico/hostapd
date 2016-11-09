@@ -607,8 +607,7 @@ int hostapd_ctrl_iface_freq_channel(struct hostapd_data *hapd, const char *chann
 {
     int ichannel = atoi(channel);
     struct hostapd_iface *iface = hapd->iface;
-    wpa_printf(MSG_INFO, "int channel:%d", ichannel);
-    wpa_printf(MSG_INFO, "Mode: %s  Channel: %d  "
+    wpa_printf(MSG_INFO, "Previous Channel Info:  Mode: %s  Channel: %d  "
                "Frequency: %d MHz",
 			   hostapd_hw_mode_txt(iface->conf->hw_mode),
 			   iface->conf->channel, iface->freq);
@@ -625,7 +624,7 @@ int hostapd_ctrl_iface_freq_channel(struct hostapd_data *hapd, const char *chann
 				   "kernel driver");
         return -1;
     }
-    wpa_printf(MSG_INFO, "Mode: %s  Channel: %d  "
+    wpa_printf(MSG_INFO, "Current Channel Info:  Mode: %s  Channel: %d  "
                "Frequency: %d MHz",
 			   hostapd_hw_mode_txt(iface->conf->hw_mode),
 			   iface->conf->channel, iface->freq);
