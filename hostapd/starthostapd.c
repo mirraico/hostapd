@@ -5,30 +5,7 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-
-#include "utils/includes.h"
-#ifndef CONFIG_NATIVE_WINDOWS
-#include <syslog.h>
-#include <grp.h>
-#endif /* CONFIG_NATIVE_WINDOWS */
-
-#include "utils/common.h"
-#include "utils/eloop.h"
-#include "utils/uuid.h"
-#include "crypto/random.h"
-#include "crypto/tls.h"
-#include "common/version.h"
-#include "drivers/driver.h"
-#include "eap_server/eap.h"
-#include "eap_server/tncs.h"
-#include "ap/hostapd.h"
-#include "ap/ap_config.h"
-#include "ap/ap_drv_ops.h"
-#include "fst/fst.h"
-#include "config_file.h"
-#include "eap_register.h"
-#include "ctrl_iface.h"
-
+#include "starthostapd.h"
 
 struct hapd_global {
 	void **drv_priv;
@@ -834,7 +811,7 @@ int start_hostapd(const char *config_fname)
 
 int main(int argc, char *argv[])
 {
-    start_hostapd("/home/sammy/Workspace/c/backup/hostapd/hostapd/config/hostapd.conf");
+    start_hostapd("/home/sammy/Workspace/c/hostapd/hostapd/config/hostapd.conf");
 }
 
 
