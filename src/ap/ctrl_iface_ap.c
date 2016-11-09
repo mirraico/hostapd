@@ -26,6 +26,7 @@
 #include "ap_config.h"
 #include "hw_features.h"
 #include "beacon.h"
+#include <stdio.h>
 
 
 static int hostapd_get_sta_tx_rx(struct hostapd_data *hapd,
@@ -559,6 +560,16 @@ int hostapd_ctrl_iface_stop_ap(struct hostapd_data *hapd)
 	return hostapd_drv_stop_ap(hapd);
 }
 
+void hex_to_string(u8 *hex_bytes, char *string)
+{
+    int i;
+    for(i = 0; i < 32; i++)
+    {
+        sprintf(string+i, "%x", hex_bytes[i]); 
+    }
+}
+
+
 int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				      const char *txtnewssid)
 {
@@ -578,10 +589,17 @@ int hostapd_ctrl_iface_ssid(struct hostapd_data *hapd,
 				   "kernel driver");
         return -1;
     }
-    wpa_printf(MSG_INFO, "previous psk: %s", bss->ssid.wpa_psk->psk);
+    if(bss->ssid.wpa_psk == NULL)
+    {
+        return 0;
+    }
+    char wpa_psk[64];
+    hex_to_string(bss->ssid.wpa_psk->psk, wpa_psk);
+    wpa_printf(MSG_INFO, "previous psk: %s", wpa_psk);
     bss->ssid.wpa_psk = NULL;
     hostapd_setup_wpa_psk(bss);
-    wpa_printf(MSG_INFO, "current psk: %s", bss->ssid.wpa_psk->psk);
+    hex_to_string(bss->ssid.wpa_psk->psk, wpa_psk);
+    wpa_printf(MSG_INFO, "current psk: %s", wpa_psk);
 	return 0;
 }
 
@@ -589,8 +607,7 @@ int hostapd_ctrl_iface_freq_channel(struct hostapd_data *hapd, const char *chann
 {
     int ichannel = atoi(channel);
     struct hostapd_iface *iface = hapd->iface;
-    wpa_printf(MSG_INFO, "int channel:%d", ichannel);
-    wpa_printf(MSG_INFO, "Mode: %s  Channel: %d  "
+    wpa_printf(MSG_INFO, "Previous Channel Info:  Mode: %s  Channel: %d  "
                "Frequency: %d MHz",
 			   hostapd_hw_mode_txt(iface->conf->hw_mode),
 			   iface->conf->channel, iface->freq);
@@ -607,7 +624,7 @@ int hostapd_ctrl_iface_freq_channel(struct hostapd_data *hapd, const char *chann
 				   "kernel driver");
         return -1;
     }
-    wpa_printf(MSG_INFO, "Mode: %s  Channel: %d  "
+    wpa_printf(MSG_INFO, "Current Channel Info:  Mode: %s  Channel: %d  "
                "Frequency: %d MHz",
 			   hostapd_hw_mode_txt(iface->conf->hw_mode),
 			   iface->conf->channel, iface->freq);

@@ -8,9 +8,8 @@
 
 #ifndef CONFIG_FILE_H
 #define CONFIG_FILE_H
-#include "../src/ap/hostapd.h"
+
 struct hostapd_config * hostapd_config_read(const char *fname);
-struct hostapd_config * hostapd_config_load(struct hostapd_simple_config *s_conf);
 int hostapd_set_iface(struct hostapd_config *conf,
 		      struct hostapd_bss_config *bss, const char *field,
 		      char *value);
