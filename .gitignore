@@ -1,0 +1,6 @@
+*.d
+*.o
+*.gcno
+*.gcda
+*.gcov
+hostapd/config

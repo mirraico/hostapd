@@ -1,6 +1,3 @@
-
-#ifndef STARTHOSTAPD_H
-#define STARTHOSTAPD_H
 #include "utils/includes.h"
 #ifndef CONFIG_NATIVE_WINDOWS
 #include <syslog.h>
@@ -23,6 +20,10 @@
 #include "config_file.h"
 #include "eap_register.h"
 #include "ctrl_iface.h"
+#include "sys/socket.h"
+#include "sys/ioctl.h"
+#include "ifaddrs.h"
+#include "net/if.h"
 
-int start_hostapd_daemon(struct hostapd_simple_config *s_conf);
-#endif // STARTHOSTAPD_H
+int start_hostapd(const char *config_fname);
+int get_wnic_name(char wnic_name[]);
