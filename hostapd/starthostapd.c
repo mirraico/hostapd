@@ -809,6 +809,38 @@ int start_hostapd(const char *config_fname)
 	return ret;
 }
 
+int get_wnic_name(char wnic_name[])
+{
+    struct ifaddrs *ifaddr, *ifa;
+
+    if(getifaddrs(&ifaddr) == -1)
+    {
+        return -1;
+    }
+
+    ifa = ifaddr;
+
+    while(ifa != NULL)
+    {
+        if(ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_PACKET)
+        {
+            ifa = ifa->ifa_next;
+            continue;
+        }
+        if(strncmp(ifa->ifa_name, "wl", 2) == 0)
+        {
+            strncpy(wnic_name, ifa->ifa_name, IF_NAMESIZE);
+            return 0; 
+        }
+        ifa = ifa->ifa_next;
+    }
+
+    free(ifaddr);
+
+    return -1;
+
+}
+
 int main(int argc, char *argv[])
 {
     start_hostapd("/home/sammy/Workspace/c/hostapd/hostapd/config/hostapd.conf");
