@@ -1,4 +1,33 @@
-﻿## README
+## README
+
+---
+
+#### 11月10号
+
+**添加get_wnic_name**
+
+用于获取无线接口名称
+
+如果有多个无线接口默认获取第一个
+
+**调用方法：**#include "starthostapd.h"
+
+---
+
+#### 11月9号
+
+**重新设计hostapd启动入口函数**
+
+将启动入口函数改为start_hostapd(const char *config_dir);
+
+新函数需要指定配置文件的路径
+
+调用方法：#include "starthostapd.h"
+
+**下一步**
+
+补齐所有配置文件中设计到的参数更改
+
 ---
 #### 10月28号
 ##### 启动封装
@@ -30,7 +59,6 @@ struct hostapd_simple_config {
 
 ##### 下一步
 **解决bug**, **完善**配置参数.
-
 
 ---
 
@@ -119,4 +147,4 @@ ctrl_iface_ap.c
 ---
 
 
-  [1]: http://static.zybuluo.com/sammyyx/4yfv5rnglzjqzpm48g2lf68e/image_1avlkheou6ab18no1nc41efr1i6a9.png
+[1]: http://static.zybuluo.com/sammyyx/4yfv5rnglzjqzpm48g2lf68e/image_1avlkheou6ab18no1nc41efr1i6a9.png

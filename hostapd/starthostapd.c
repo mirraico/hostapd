@@ -5,9 +5,7 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-
 #include "starthostapd.h"
-
 
 struct hapd_global {
 	void **drv_priv;
@@ -221,13 +219,14 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
  * interfaces. No actiual driver operations are started.
  */
 static struct hostapd_iface *
-hostapd_interface_init(struct hapd_interfaces *interfaces, struct hostapd_simple_config *s_conf,
-                       int debug)
+hostapd_interface_init(struct hapd_interfaces *interfaces,
+		       const char *config_fname, int debug)
 {
 	struct hostapd_iface *iface;
 	int k;
-	//wpa_printf(MSG_ERROR, "Configuration file: %s", config_fname);
-	iface = hostapd_init_no_config(interfaces, s_conf);
+
+	wpa_printf(MSG_ERROR, "Configuration file: %s", config_fname);
+	iface = hostapd_init(interfaces, config_fname);
 	if (!iface)
 		return NULL;
 	iface->interfaces = interfaces;
@@ -239,8 +238,8 @@ hostapd_interface_init(struct hapd_interfaces *interfaces, struct hostapd_simple
 
 	if (iface->conf->bss[0]->iface[0] == '\0' &&
 	    !hostapd_drv_none(iface->bss[0])) {
-		//wpa_printf(MSG_ERROR, "Interface name not specified in %s",
-		//	   config_fname);
+		wpa_printf(MSG_ERROR, "Interface name not specified in %s",
+			   config_fname);
 		hostapd_interface_deinit_free(iface);
 		return NULL;
 	}
@@ -397,6 +396,50 @@ static int hostapd_global_run(struct hapd_interfaces *ifaces, int daemonize,
 	return 0;
 }
 
+/*
+static void show_version(void)
+{
+	fprintf(stderr,
+		"hostapd v" VERSION_STR "\n"
+		"User space daemon for IEEE 802.11 AP management,\n"
+		"IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator\n"
+		"Copyright (c) 2002-2015, Jouni Malinen <j@w1.fi> "
+		"and contributors\n");
+}
+*/
+/*
+static void usage(void)
+{
+	show_version();
+	fprintf(stderr,
+		"\n"
+		"usage: hostapd [-hdBKtv] [-P <PID file>] [-e <entropy file>] "
+		"\\\n"
+		"         [-g <global ctrl_iface>] [-G <group>] \\\n"
+		"         <configuration file(s)>\n"
+		"\n"
+		"options:\n"
+		"   -h   show this usage\n"
+		"   -d   show more debug messages (-dd for even more)\n"
+		"   -B   run daemon in the background\n"
+		"   -e   entropy file\n"
+		"   -g   global control interface path\n"
+		"   -G   group for control interfaces\n"
+		"   -P   PID file\n"
+		"   -K   include key data in debug messages\n"
+#ifdef CONFIG_DEBUG_FILE
+		"   -f   log output to debug file instead of stdout\n"
+#endif /\* CONFIG_DEBUG_FILE *\/
+#ifdef CONFIG_DEBUG_LINUX_TRACING
+		"   -T = record to Linux tracing in addition to logging\n"
+		"        (records all messages regardless of debug verbosity)\n"
+#endif /\* CONFIG_DEBUG_LINUX_TRACING *\/
+		"   -t   include timestamps in some debug messages\n"
+		"   -v   show hostapd version\n");
+
+	exit(1);
+}
+*/
 
 static const char * hostapd_msg_ifname_cb(void *ctx)
 {
@@ -407,6 +450,46 @@ static const char * hostapd_msg_ifname_cb(void *ctx)
 	return NULL;
 }
 
+/*
+static int hostapd_get_global_ctrl_iface(struct hapd_interfaces *interfaces,
+					 const char *path)
+{
+	char *pos;
+	os_free(interfaces->global_iface_path);
+	interfaces->global_iface_path = os_strdup(path);
+	if (interfaces->global_iface_path == NULL)
+		return -1;
+	pos = os_strrchr(interfaces->global_iface_path, '/');
+	if (pos == NULL) {
+		wpa_printf(MSG_ERROR, "No '/' in the global control interface "
+			   "file");
+		os_free(interfaces->global_iface_path);
+		interfaces->global_iface_path = NULL;
+		return -1;
+	}
+
+	*pos = '\0';
+	interfaces->global_iface_name = pos + 1;
+
+	return 0;
+}
+
+
+static int hostapd_get_ctrl_iface_group(struct hapd_interfaces *interfaces,
+					const char *group)
+{
+#ifndef CONFIG_NATIVE_WINDOWS
+	struct group *grp;
+	grp = getgrnam(group);
+	if (grp == NULL) {
+		wpa_printf(MSG_ERROR, "Unknown group '%s'", group);
+		return -1;
+	}
+	interfaces->ctrl_iface_group = grp->gr_gid;
+#endif /\* CONFIG_NATIVE_WINDOWS *\/
+	return 0;
+}
+*/
 
 #ifdef CONFIG_WPS
 static int gen_uuid(const char *txt_addr)
@@ -450,17 +533,20 @@ static void hostapd_periodic(void *eloop_ctx, void *timeout_ctx)
 	hostapd_for_each_interface(interfaces, hostapd_periodic_call, NULL);
 }
 
-int start_hostapd_daemon(struct hostapd_simple_config *s_conf)
+int start_hostapd(const char *config_fname)
 {
-    struct hapd_interfaces interfaces;
+	struct hapd_interfaces interfaces;
 	int ret = 1;
-	size_t i;
-	int debug = 0, daemonize = 0;
+	//size_t i, j;
+    size_t i;
+	//int c, debug = 0, daemonize = 0;
+    int debug = 0, daemonize = 0;
 	char *pid_file = NULL;
 	const char *log_file = NULL;
 	const char *entropy_file = NULL;
-	char **bss_config = NULL;
-	size_t num_bss_configs = 0;
+	//char **bss_config = NULL, **tmp_bss;
+    char **bss_config = NULL;
+	//size_t num_bss_configs = 0;
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 	int enable_trace_dbg = 0;
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
@@ -479,7 +565,81 @@ int start_hostapd_daemon(struct hostapd_simple_config *s_conf)
 	interfaces.global_iface_name = NULL;
 	interfaces.global_ctrl_sock = -1;
 	interfaces.global_ctrl_dst = NULL;
-	interfaces.config_load_cb = hostapd_config_load;
+    
+    /*
+	for (;;) {
+		c = getopt(argc, argv, "b:Bde:f:hKP:Ttu:vg:G:");
+		if (c < 0)
+			break;
+		switch (c) {
+		case 'h':
+			usage();
+			break;
+		case 'd':
+			debug++;
+			if (wpa_debug_level > 0)
+				wpa_debug_level--;
+			break;
+		case 'B':
+			daemonize++;
+			break;
+		case 'e':
+			entropy_file = optarg;
+			break;
+		case 'f':
+			log_file = optarg;
+			break;
+		case 'K':
+			wpa_debug_show_keys++;
+			break;
+		case 'P':
+			os_free(pid_file);
+			pid_file = os_rel2abs_path(optarg);
+			break;
+		case 't':
+			wpa_debug_timestamp++;
+			break;
+#ifdef CONFIG_DEBUG_LINUX_TRACING
+		case 'T':
+			enable_trace_dbg = 1;
+			break;
+#endif /\* CONFIG_DEBUG_LINUX_TRACING *\/
+		case 'v':
+			show_version();
+			exit(1);
+			break;
+		case 'g':
+			if (hostapd_get_global_ctrl_iface(&interfaces, optarg))
+				return -1;
+			break;
+		case 'G':
+			if (hostapd_get_ctrl_iface_group(&interfaces, optarg))
+				return -1;
+			break;
+		case 'b':
+			tmp_bss = os_realloc_array(bss_config,
+						   num_bss_configs + 1,
+						   sizeof(char *));
+			if (tmp_bss == NULL)
+				goto out;
+			bss_config = tmp_bss;
+			bss_config[num_bss_configs++] = optarg;
+			break;
+#ifdef CONFIG_WPS
+		case 'u':
+			return gen_uuid(optarg);
+#endif /\* CONFIG_WPS *\/
+		default:
+			usage();
+			break;
+		}
+	}
+
+	if (optind == argc && interfaces.global_iface_path == NULL &&
+	    num_bss_configs == 0)
+		usage();
+    
+    */
 	wpa_msg_register_ifname_cb(hostapd_msg_ifname_cb);
 
 	if (log_file)
@@ -496,9 +656,26 @@ int start_hostapd_daemon(struct hostapd_simple_config *s_conf)
 	}
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 
-    interfaces.count = 1;
-    interfaces.iface = os_calloc(interfaces.count + num_bss_configs,
+    //此处默认设置为1
+	interfaces.count = 1;
+    interfaces.iface = os_calloc(interfaces.count, sizeof(struct hostapd_iface *));
+    if(interfaces.iface == NULL)
+    {
+        wpa_printf(MSG_ERROR, "malloc failed");
+        return -1;
+    }
+
+    /*
+	if (interfaces.count || num_bss_configs) {
+		interfaces.iface = os_calloc(interfaces.count + num_bss_configs,
 					     sizeof(struct hostapd_iface *));
+		if (interfaces.iface == NULL) {
+			wpa_printf(MSG_ERROR, "malloc failed");
+			return -1;
+		}
+	}
+    */
+
 	if (hostapd_global_init(&interfaces, entropy_file)) {
 		wpa_printf(MSG_ERROR, "Failed to initialize global context");
 		return -1;
@@ -519,14 +696,64 @@ int start_hostapd_daemon(struct hostapd_simple_config *s_conf)
 #endif /* CONFIG_FST && CONFIG_CTRL_IFACE */
 
 	/* Allocate and parse configuration for full interface files */
+    interfaces.iface[0] = hostapd_interface_init(&interfaces, 
+            config_fname, 
+            debug);
+    if(!interfaces.iface[0])
+    {
+        wpa_printf(MSG_ERROR, "Failed to initialize interface");
+        goto out;
+    }
+
+    /*
 	for (i = 0; i < interfaces.count; i++) {
-		interfaces.iface[i] = hostapd_interface_init(&interfaces, s_conf,
+		interfaces.iface[i] = hostapd_interface_init(&interfaces,
+							     argv[optind + i],
 							     debug);
 		if (!interfaces.iface[i]) {
 			wpa_printf(MSG_ERROR, "Failed to initialize interface");
 			goto out;
 		}
 	}
+    */
+
+	/* Allocate and parse configuration for per-BSS files */
+    /*
+	for (i = 0; i < num_bss_configs; i++) {
+		struct hostapd_iface *iface;
+		char *fname;
+
+		wpa_printf(MSG_INFO, "BSS config: %s", bss_config[i]);
+		fname = os_strchr(bss_config[i], ':');
+		if (fname == NULL) {
+			wpa_printf(MSG_ERROR,
+				   "Invalid BSS config identifier '%s'",
+				   bss_config[i]);
+			goto out;
+		}
+		*fname++ = '\0';
+		iface = hostapd_interface_init_bss(&interfaces, bss_config[i],
+						   fname, debug);
+		if (iface == NULL)
+			goto out;
+		for (j = 0; j < interfaces.count; j++) {
+			if (interfaces.iface[j] == iface)
+				break;
+		}
+		if (j == interfaces.count) {
+			struct hostapd_iface **tmp;
+			tmp = os_realloc_array(interfaces.iface,
+					       interfaces.count + 1,
+					       sizeof(struct hostapd_iface *));
+			if (tmp == NULL) {
+				hostapd_interface_deinit_free(iface);
+				goto out;
+			}
+			interfaces.iface = tmp;
+			interfaces.iface[interfaces.count++] = iface;
+		}
+	}
+    */
 
 	/*
 	 * Enable configured interfaces. Depending on channel configuration,
@@ -582,19 +809,41 @@ int start_hostapd_daemon(struct hostapd_simple_config *s_conf)
 	return ret;
 }
 
+int get_wnic_name(char wnic_name[])
+{
+    struct ifaddrs *ifaddr, *ifa;
+
+    if(getifaddrs(&ifaddr) == -1)
+    {
+        return -1;
+    }
+
+    ifa = ifaddr;
+
+    while(ifa != NULL)
+    {
+        if(ifa->ifa_addr == NULL || ifa->ifa_addr->sa_family != AF_PACKET)
+        {
+            ifa = ifa->ifa_next;
+            continue;
+        }
+        if(strncmp(ifa->ifa_name, "wl", 2) == 0)
+        {
+            strncpy(wnic_name, ifa->ifa_name, IF_NAMESIZE);
+            return 0; 
+        }
+        ifa = ifa->ifa_next;
+    }
+
+    free(ifaddr);
+
+    return -1;
+
+}
+
 int main(int argc, char *argv[])
 {
-    struct hostapd_simple_config s_conf;
-    s_conf.auth_algs = 1;
-    s_conf.channel = 1;
-    s_conf.ctrl_interface = "/var/run/hostapd";
-    s_conf.hw_mode = "g";
-    s_conf.rsn_pairwise = "CCMP";
-    s_conf.wpa_pairwise = "TKIP";
-    s_conf.wpa_key_mgmt = "WPA-PSK";
-    s_conf.ssid = "testest";
-    s_conf.wlan_interface = "wlx14cf92afb710";
-    s_conf.wpa_passphrase = "12345678";
-    s_conf.wpa = 2;
-    start_hostapd_daemon(&s_conf);
+    start_hostapd("/home/sammy/Workspace/c/hostapd/hostapd/config/hostapd.conf");
 }
+
+
